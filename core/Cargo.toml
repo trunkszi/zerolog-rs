@@ -1,0 +1,22 @@
+[package]
+name = "ferrilog-core"
+version = "0.1.0"
+edition = "2024"
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "Core runtime for ferrilog: lock-free SPSC queues, background poller, and binary encoding"
+license = "MIT"
+repository = "https://github.com/trunkszi/ferrilog"
+
+[features]
+default = ["buffer-2m"]
+buffer-1m  = []
+buffer-2m  = []
+buffer-4m  = []
+buffer-8m  = []
+buffer-16m = []
+buffer-32m = []
+buffer-64m = []
+
+[dependencies]
+ryu = { workspace = true }
+libc = { workspace = true }

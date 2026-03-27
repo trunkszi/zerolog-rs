@@ -1,0 +1,16 @@
+[package]
+name = "ferrilog-macros"
+version = "0.1.0"
+edition = "2024"
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "Proc macros for ferrilog: log!() macro and #[derive(Encode)]"
+license = "MIT"
+repository = "https://github.com/trunkszi/ferrilog"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true }
+syn = { workspace = true }
+quote = { workspace = true }

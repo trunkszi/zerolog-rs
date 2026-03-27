@@ -1,0 +1,64 @@
+[package]
+name = "ferrilog"
+version = "0.1.0"
+edition = "2024"
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "High-performance lock-free structured logging with sub-30ns hot-path latency"
+license = "MIT"
+repository = "https://github.com/trunkszi/ferrilog"
+readme = "README.md"
+keywords = ["logging", "lock-free", "low-latency", "structured-logging", "async"]
+categories = ["development-tools::debugging"]
+
+[features]
+default = ["buffer-2m"]
+buffer-1m  = ["ferrilog-core/buffer-1m"]
+buffer-2m  = ["ferrilog-core/buffer-2m"]
+buffer-4m  = ["ferrilog-core/buffer-4m"]
+buffer-8m  = ["ferrilog-core/buffer-8m"]
+buffer-16m = ["ferrilog-core/buffer-16m"]
+buffer-32m = ["ferrilog-core/buffer-32m"]
+buffer-64m = ["ferrilog-core/buffer-64m"]
+
+[dependencies]
+ferrilog-core = { workspace = true }
+ferrilog-macros = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "ferrilog_bench"
+harness = false
+
+[[bench]]
+name = "latency_throughput"
+harness = false
+
+[[bench]]
+name = "core_component_bench"
+harness = false
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+lto = "fat"
+codegen-units = 1
+
+[workspace]
+resolver = "3"
+members = ["core", "macros"]
+
+[workspace.dependencies]
+ferrilog-core = { path = "core", version = "0.1.0" }
+ferrilog-macros = { path = "macros", version = "0.1.0" }
+
+ryu = "1"
+libc = "0.2"
+proc-macro2 = "1"
+syn = { version = "2", features = ["full"] }
+quote = "1"
+criterion = "0.8.2"
