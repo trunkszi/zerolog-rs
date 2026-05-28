@@ -18,7 +18,7 @@ fn main() -> std::io::Result<()> {
         .start()?;
 
     ferrilog::set_thread_name("main");
-    ferrilog::logi!("spawning 4 worker threads");
+    ferrilog::info!("spawning 4 worker threads");
 
     let mut handles = Vec::new();
     for id in 0..4u32 {
@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
             ferrilog::set_thread_name(&format!("worker-{}", id));
 
             for i in 0..10u32 {
-                ferrilog::logi!("thread {} message {} value={}", id, i, id * 100 + i);
+                ferrilog::info!("thread {} message {} value={}", id, i, id * 100 + i);
             }
         });
         handles.push(handle);
@@ -35,7 +35,7 @@ fn main() -> std::io::Result<()> {
 
     // Main thread also logs while workers are running.
     for i in 0..5u32 {
-        ferrilog::logi!("main message {}", i);
+        ferrilog::info!("main message {}", i);
     }
 
     // Wait for all workers to finish.
@@ -46,7 +46,7 @@ fn main() -> std::io::Result<()> {
     // The guard flushes all remaining messages on drop.
     // Output is time-ordered across all threads because the poller's
     // min-heap merges by timestamp.
-    ferrilog::logi!("all workers finished");
+    ferrilog::info!("all workers finished");
 
     Ok(())
 }

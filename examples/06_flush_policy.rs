@@ -40,7 +40,7 @@ fn main() -> std::io::Result<()> {
             .start()?;
 
         ferrilog::set_thread_name("main");
-        ferrilog::logi!("delayed message");
+        ferrilog::info!("delayed message");
 
         // After a short sleep the message is still buffered.
         std::thread::sleep(Duration::from_millis(100));
@@ -67,7 +67,7 @@ fn main() -> std::io::Result<()> {
 
         // Write several short messages until the buffer exceeds 128 bytes.
         for i in 0..10u32 {
-            ferrilog::logi!("buffer-test message number {}", i);
+            ferrilog::info!("buffer-test message number {}", i);
         }
         std::thread::sleep(Duration::from_millis(100));
         let flushed = sink.lock().unwrap().len();
@@ -88,8 +88,8 @@ fn main() -> std::io::Result<()> {
             .start()?;
 
         ferrilog::set_thread_name("main");
-        ferrilog::logi!("info -- may be buffered");
-        ferrilog::loge!("error -- triggers immediate flush");
+        ferrilog::info!("info -- may be buffered");
+        ferrilog::error!("error -- triggers immediate flush");
 
         std::thread::sleep(Duration::from_millis(100));
         let flushed = sink.lock().unwrap().len();

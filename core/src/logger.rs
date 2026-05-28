@@ -13,7 +13,7 @@ use crate::{
     Level, StaticHeaderWriteFn, level_from_u8,
     output::{OutputBuffer, RotationConfig},
     poller::{self, PollerState, ReadyMessageHeap},
-    spsc_queue::{PAYLOAD_ARGS_OFFSET, PAYLOAD_INFO_OFFSET, SpscVarQueue},
+    spsc_queue::{PAYLOAD_ARGS_OFFSET, PAYLOAD_INFO_OFFSET, PAYLOAD_SPAN_ID_OFFSET, SpscVarQueue},
     thread_buffer::{THREAD_BUFFER_REGISTRY, ThreadBuffer},
     timestamp_counter::TimestampCounter,
 };
@@ -25,7 +25,7 @@ pub type DecodeFn = unsafe fn(*const u8, &mut Vec<u8>);
 /// The argument is the cumulative count of queue-full events.
 pub type QueueFullCallback = fn(u64);
 
-/// Default log level (DBG = accept all messages).
+/// Default log level (DBG = accept debug and above; trace stays opt-in).
 const DEFAULT_LEVEL: u8 = Level::DBG as u8;
 
 /// Default flush delay (3 seconds in nanoseconds).
@@ -425,6 +425,7 @@ fn poll_inner(
 
         let timestamp_nanoseconds =
             timestamp_counter.timestamp_to_nanoseconds(node.raw_timestamp());
+        let span_id = unsafe { payload.add(PAYLOAD_SPAN_ID_OFFSET).cast::<u64>().read_unaligned() };
         let thread_name = unsafe { (*node.thread_buffer()).name_bytes() };
         unsafe {
             output.write_record(
@@ -432,6 +433,7 @@ fn poll_inner(
                 info.level,
                 thread_name,
                 info.location,
+                span_id,
                 |buffer| (info.decode)(payload.add(PAYLOAD_ARGS_OFFSET), buffer),
             )?;
         }

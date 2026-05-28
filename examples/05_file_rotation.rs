@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
 
     // Write enough messages to exceed 1 KB and trigger rotation.
     for i in 0..100u32 {
-        ferrilog::logi!(
+        ferrilog::info!(
             "rotation demo message {:0>4} -- padding to increase size xxxxxxxxxxxxxxxxxx",
             i
         );

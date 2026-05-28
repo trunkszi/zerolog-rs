@@ -16,36 +16,36 @@ fn main() -> std::io::Result<()> {
     let pi: f64 = std::f64::consts::PI;
 
     // --- Hexadecimal ---
-    ferrilog::logi!("hex lower:       {:x}", value); // ff
-    ferrilog::logi!("hex lower alt:   {:#x}", value); // 0xff
-    ferrilog::logi!("hex upper:       {:X}", value); // FF
-    ferrilog::logi!("hex upper alt:   {:#X}", value); // 0xFF
+    ferrilog::info!("hex lower:       {:x}", value); // ff
+    ferrilog::info!("hex lower alt:   {:#x}", value); // 0xff
+    ferrilog::info!("hex upper:       {:X}", value); // FF
+    ferrilog::info!("hex upper alt:   {:#X}", value); // 0xFF
 
     // --- Binary ---
-    ferrilog::logi!("binary:          {:b}", value); // 11111111
-    ferrilog::logi!("binary alt:      {:#b}", value); // 0b11111111
+    ferrilog::info!("binary:          {:b}", value); // 11111111
+    ferrilog::info!("binary alt:      {:#b}", value); // 0b11111111
 
     // --- Octal ---
-    ferrilog::logi!("octal:           {:o}", value); // 377
-    ferrilog::logi!("octal alt:       {:#o}", value); // 0o377
+    ferrilog::info!("octal:           {:o}", value); // 377
+    ferrilog::info!("octal alt:       {:#o}", value); // 0o377
 
     // --- Floating point precision ---
-    ferrilog::logi!("pi 2 decimals:   {:.2}", pi); // 3.14
-    ferrilog::logi!("pi 6 decimals:   {:.6}", pi); // 3.141593
+    ferrilog::info!("pi 2 decimals:   {:.2}", pi); // 3.14
+    ferrilog::info!("pi 6 decimals:   {:.6}", pi); // 3.141593
 
     // --- Width and alignment ---
     // Right-align (default) within 10 characters
-    ferrilog::logi!("right-aligned:   [{:>10}]", 42u32); // [ 42]
+    ferrilog::info!("right-aligned:   [{:>10}]", 42u32); // [ 42]
     // Left-align within 10 characters
-    ferrilog::logi!("left-aligned:    [{:<10}]", 42u32); // [42 ]
+    ferrilog::info!("left-aligned:    [{:<10}]", 42u32); // [42 ]
     // Center-align within 10 characters
-    ferrilog::logi!("center-aligned:  [{:^10}]", 42u32); // [    42    ]
+    ferrilog::info!("center-aligned:  [{:^10}]", 42u32); // [    42    ]
 
     // --- Zero-padding ---
-    ferrilog::logi!("zero-padded:     [{:0>8}]", 42u32); // [00000042]
+    ferrilog::info!("zero-padded:     [{:0>8}]", 42u32); // [00000042]
 
     // --- Combined: hex with zero-pad and prefix ---
-    ferrilog::logi!("hex zero-padded: [{:#010x}]", value); // [0x000000ff]
+    ferrilog::info!("hex zero-padded: [{:#010x}]", value); // [0x000000ff]
 
     Ok(())
 }

@@ -109,9 +109,9 @@ fn main() -> std::io::Result<()> {
         .poller_interval(Duration::from_millis(1))
         .start()?;
 
-    ferrilog::logi!("server started on port {}", 8080u32);
-    ferrilog::logw!("connection pool at {}% capacity", 85u32);
-    ferrilog::loge!("request failed with code {:#x}", 0xDEADu32);
+    ferrilog::info!("server started on port {}", 8080u32);
+    ferrilog::warn!("connection pool at {}% capacity", 85u32);
+    ferrilog::error!("request failed with code {:#x}", 0xDEADu32);
 
     Ok(())
     // _guard drops here: stops poller, flushes all pending messages
@@ -130,10 +130,10 @@ Output:
 
 | Macro | Level | Example |
 |-------|-------|---------|
-| `logd!(...)` | Debug | `logd!("x={}", x)` |
-| `logi!(...)` | Info | `logi!("started")` |
-| `logw!(...)` | Warning | `logw!("slow query: {}ms", elapsed)` |
-| `loge!(...)` | Error | `loge!("failed: {}", err)` |
+| `debug!(...)` | Debug | `debug!("x={}", x)` |
+| `info!(...)` | Info | `info!("started")` |
+| `warn!(...)` | Warning | `warn!("slow query: {}ms", elapsed)` |
+| `error!(...)` | Error | `error!("failed: {}", err)` |
 | `log!(level, ...)` | Any | `log!(Level::WRN, "custom={}", v)` |
 
 The `log!` macro **automatically selects the optimal encoding path** at compile time:
@@ -143,16 +143,16 @@ The `log!` macro **automatically selects the optimal encoding path** at compile 
 ## Format Specifiers
 
 ```rust
-ferrilog::logi!("decimal:    {}", 255u32);         // 255
-ferrilog::logi!("hex:        {:x}", 255u32);       // ff
-ferrilog::logi!("upper hex:  {:#X}", 255u32);      // 0xFF
-ferrilog::logi!("binary:     {:#b}", 10u32);       // 0b1010
-ferrilog::logi!("octal:      {:o}", 255u32);       // 377
-ferrilog::logi!("precision:  {:.3}", 3.14159f64);  // 3.142
-ferrilog::logi!("right-pad:  {:>10}", 42u32);      //         42
-ferrilog::logi!("left-pad:   {:<10}", 42u32);      // 42
-ferrilog::logi!("center:     {:^10}", 42u32);      //     42
-ferrilog::logi!("zero-pad:   {:08}", 42u32);       // 00000042
+ferrilog::info!("decimal:    {}", 255u32);         // 255
+ferrilog::info!("hex:        {:x}", 255u32);       // ff
+ferrilog::info!("upper hex:  {:#X}", 255u32);      // 0xFF
+ferrilog::info!("binary:     {:#b}", 10u32);       // 0b1010
+ferrilog::info!("octal:      {:o}", 255u32);       // 377
+ferrilog::info!("precision:  {:.3}", 3.14159f64);  // 3.142
+ferrilog::info!("right-pad:  {:>10}", 42u32);      //         42
+ferrilog::info!("left-pad:   {:<10}", 42u32);      // 42
+ferrilog::info!("center:     {:^10}", 42u32);      //     42
+ferrilog::info!("zero-pad:   {:08}", 42u32);       // 00000042
 ```
 
 ## Custom Types
@@ -173,7 +173,7 @@ impl std::fmt::Display for Order {
     }
 }
 
-ferrilog::logi!("new order: {}", Order { id: 1001, price: 49.99, qty: 100 });
+ferrilog::info!("new order: {}", Order { id: 1001, price: 49.99, qty: 100 });
 // → new order: Order{id=1001, price=49.99, qty=100}
 ```
 
@@ -230,7 +230,7 @@ use std::thread;
 for i in 0..4 {
     thread::spawn(move || {
         ferrilog::set_thread_name(&format!("worker-{i}"));
-        ferrilog::logi!("hello from thread {}", i as u32);
+        ferrilog::info!("hello from thread {}", i as u32);
     });
 }
 ```

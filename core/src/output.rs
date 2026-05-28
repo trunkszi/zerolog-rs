@@ -93,20 +93,21 @@ impl HeaderMode {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        span_id: u64,
     ) {
         match self {
             Self::Empty => {}
             Self::Default(header) => {
-                header.write_header(output, nanoseconds, level, thread_name, location);
+                header.write_header(output, nanoseconds, level, thread_name, location, span_id);
             }
             Self::LevelThreadLocation(header) => {
-                header.write_header(output, nanoseconds, level, thread_name, location);
+                header.write_header(output, nanoseconds, level, thread_name, location, span_id);
             }
             Self::Static(header) => {
-                header.write_header(output, nanoseconds, level, thread_name, location);
+                header.write_header(output, nanoseconds, level, thread_name, location, span_id);
             }
             Self::Dynamic(header) => {
-                header.write_header(output, nanoseconds, level, thread_name, location);
+                header.write_header(output, nanoseconds, level, thread_name, location, span_id);
             }
         }
     }
@@ -186,6 +187,7 @@ impl OutputBuffer {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        span_id: u64,
         append_body: F,
     ) -> io::Result<()>
     where
@@ -197,6 +199,7 @@ impl OutputBuffer {
             level,
             thread_name,
             location,
+            span_id,
         );
         append_body(&mut self.pending);
         self.pending.push(b'\n');

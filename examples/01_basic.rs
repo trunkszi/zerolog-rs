@@ -15,14 +15,14 @@ fn main() -> std::io::Result<()> {
     ferrilog::set_thread_name("main");
 
     // INFO and above are emitted.
-    ferrilog::logi!("hello world");
+    ferrilog::info!("hello world");
 
     // DBG is below INFO, so this message is silently discarded.
-    ferrilog::logd!("debug={}", 42u32);
+    ferrilog::debug!("debug={}", 42u32);
 
     // Warnings and errors are always above INFO.
-    ferrilog::logw!("warning={}", true);
-    ferrilog::loge!("error code={}", -1i32);
+    ferrilog::warn!("warning={}", true);
+    ferrilog::error!("error code={}", -1i32);
 
     // When `_guard` goes out of scope here, the poller thread is stopped
     // and all buffered output is flushed automatically.

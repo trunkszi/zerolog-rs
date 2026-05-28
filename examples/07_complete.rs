@@ -84,10 +84,10 @@ fn main() -> std::io::Result<()> {
     // -------------------------------------------------------------------
     // 3. Log levels and filtering
     // -------------------------------------------------------------------
-    ferrilog::logd!("debug: application starting");
-    ferrilog::logi!("info: configuration loaded");
-    ferrilog::logw!("warn: disk usage at {}%", 87u32);
-    ferrilog::loge!("error: failed to connect, retrying");
+    ferrilog::debug!("debug: application starting");
+    ferrilog::info!("info: configuration loaded");
+    ferrilog::warn!("warn: disk usage at {}%", 87u32);
+    ferrilog::error!("error: failed to connect, retrying");
 
     // -------------------------------------------------------------------
     // 4. Format specifiers
@@ -95,15 +95,15 @@ fn main() -> std::io::Result<()> {
     let flags: u32 = 0xDEAD;
     let pi: f64 = std::f64::consts::PI;
 
-    ferrilog::logi!("hex:        {:#x}", flags);
-    ferrilog::logi!("upper hex:  {:#X}", flags);
-    ferrilog::logi!("binary:     {:#b}", flags);
-    ferrilog::logi!("octal:      {:#o}", flags);
-    ferrilog::logi!("precision:  {:.4}", pi);
-    ferrilog::logi!("right-pad:  [{:>12}]", 42u32);
-    ferrilog::logi!("left-pad:   [{:<12}]", 42u32);
-    ferrilog::logi!("center-pad: [{:^12}]", 42u32);
-    ferrilog::logi!("zero-pad:   [{:0>8}]", flags);
+    ferrilog::info!("hex:        {:#x}", flags);
+    ferrilog::info!("upper hex:  {:#X}", flags);
+    ferrilog::info!("binary:     {:#b}", flags);
+    ferrilog::info!("octal:      {:#o}", flags);
+    ferrilog::info!("precision:  {:.4}", pi);
+    ferrilog::info!("right-pad:  [{:>12}]", 42u32);
+    ferrilog::info!("left-pad:   [{:<12}]", 42u32);
+    ferrilog::info!("center-pad: [{:^12}]", 42u32);
+    ferrilog::info!("zero-pad:   [{:0>8}]", flags);
 
     // -------------------------------------------------------------------
     // 5. Custom types
@@ -111,9 +111,9 @@ fn main() -> std::io::Result<()> {
     let velocity = Vec3 { x: 1.5, y: -0.3, z: 9.81 };
     let trade = Trade { symbol_id: 42, price: 123.4567, qty: 100, buy: true };
 
-    ferrilog::logi!("velocity = {}", velocity);
-    ferrilog::logi!("trade    = {}", trade);
-    ferrilog::logi!("padded trade: [{:>50}]", trade);
+    ferrilog::info!("velocity = {}", velocity);
+    ferrilog::info!("trade    = {}", trade);
+    ferrilog::info!("padded trade: [{:>50}]", trade);
 
     // -------------------------------------------------------------------
     // 6. Multi-threaded logging
@@ -123,7 +123,7 @@ fn main() -> std::io::Result<()> {
         let handle = thread::spawn(move || {
             ferrilog::set_thread_name(&format!("worker-{}", id));
             for i in 0..10u32 {
-                ferrilog::logi!("worker {} task {} status={}", id, i, id * 10 + i);
+                ferrilog::info!("worker {} task {} status={}", id, i, id * 10 + i);
             }
         });
         handles.push(handle);
@@ -131,14 +131,14 @@ fn main() -> std::io::Result<()> {
 
     // The main thread continues logging concurrently.
     for i in 0..5u32 {
-        ferrilog::logd!("main heartbeat {}", i);
+        ferrilog::debug!("main heartbeat {}", i);
     }
 
     for h in handles {
         h.join().unwrap();
     }
 
-    ferrilog::logi!("all workers finished");
+    ferrilog::info!("all workers finished");
 
     // -------------------------------------------------------------------
     // 7. Guard auto-cleanup: the drop flushes and stops the poller

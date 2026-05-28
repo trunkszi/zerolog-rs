@@ -81,10 +81,10 @@ fn main() {
     set_thread_name("main");
 
     // Log at each severity level using the convenience macros.
-    ferrilog::logd!("application starting, debug mode enabled");
-    ferrilog::logi!("server listening on port {}", 8080u32);
-    ferrilog::logw!("connection pool utilization at {}%", 85u32);
-    ferrilog::loge!("failed to open config file: {}", "config.toml");
+    ferrilog::debug!("application starting, debug mode enabled");
+    ferrilog::info!("server listening on port {}", 8080u32);
+    ferrilog::warn!("connection pool utilization at {}%", 85u32);
+    ferrilog::error!("failed to open config file: {}", "config.toml");
 
     // Manually poll and flush so we can see the output immediately.
     poll(true).unwrap();
@@ -99,31 +99,31 @@ fn main() {
     let pi: f64 = std::f64::consts::PI;
 
     // Hexadecimal (lower and upper)
-    ferrilog::logi!("hex lower: {:x}", value);
-    ferrilog::logi!("hex upper: {:X}", value);
-    ferrilog::logi!("hex with prefix: {:#x}", value);
-    ferrilog::logi!("hex zero-padded: {:#010x}", value);
+    ferrilog::info!("hex lower: {:x}", value);
+    ferrilog::info!("hex upper: {:X}", value);
+    ferrilog::info!("hex with prefix: {:#x}", value);
+    ferrilog::info!("hex zero-padded: {:#010x}", value);
 
     // Floating point precision
-    ferrilog::logi!("pi 2 decimals: {:.2}", pi);
-    ferrilog::logi!("pi 6 decimals: {:.6}", pi);
+    ferrilog::info!("pi 2 decimals: {:.2}", pi);
+    ferrilog::info!("pi 6 decimals: {:.6}", pi);
 
     // Width and alignment
-    ferrilog::logi!("right-aligned: {:>10}", 42u32);
-    ferrilog::logi!("left-aligned:  {:<10}", 42u32);
-    ferrilog::logi!("center-aligned:{:^10}", 42u32);
+    ferrilog::info!("right-aligned: {:>10}", 42u32);
+    ferrilog::info!("left-aligned:  {:<10}", 42u32);
+    ferrilog::info!("center-aligned:{:^10}", 42u32);
 
     // Fill character with alignment
-    ferrilog::logi!("zero-filled: {:0>8}", 42u32);
-    ferrilog::logi!("dash-filled: {:->20}", "hello");
+    ferrilog::info!("zero-filled: {:0>8}", 42u32);
+    ferrilog::info!("dash-filled: {:->20}", "hello");
 
     // Scientific notation
-    ferrilog::logi!("scientific: {:>14.3e}", pi);
+    ferrilog::info!("scientific: {:>14.3e}", pi);
 
     // Binary and octal
-    ferrilog::logi!("binary: {:b}", 42u32);
-    ferrilog::logi!("binary with prefix: {:#b}", 42u32);
-    ferrilog::logi!("octal: {:o}", 42u32);
+    ferrilog::info!("binary: {:b}", 42u32);
+    ferrilog::info!("binary with prefix: {:#b}", 42u32);
+    ferrilog::info!("octal: {:o}", 42u32);
 
     poll(true).unwrap();
     println!("--- format specifiers done ---\n");
@@ -135,12 +135,12 @@ fn main() {
     let point = Point { x: 10, y: -3 };
     let order = Order { id: 100001, price: 49.99, quantity: 50 };
 
-    ferrilog::logi!("point={}", point);
-    ferrilog::logi!("order={}", order);
+    ferrilog::info!("point={}", point);
+    ferrilog::info!("order={}", order);
 
     // Custom types also support format specifiers (applied via Display)
-    ferrilog::logi!("padded point: {:^20}", point);
-    ferrilog::logi!("padded order: {:>40}", order);
+    ferrilog::info!("padded point: {:^20}", point);
+    ferrilog::info!("padded order: {:>40}", order);
 
     // log_fast! variant: only supports bare {} placeholders, but is faster
     ferrilog::log_fast!(Level::INF, "fast point={}", point);
@@ -154,10 +154,10 @@ fn main() {
 
     // Only show warnings and above
     set_level(Level::WRN);
-    ferrilog::logd!("this debug message is filtered out");
-    ferrilog::logi!("this info message is filtered out");
-    ferrilog::logw!("this warning IS visible");
-    ferrilog::loge!("this error IS visible");
+    ferrilog::debug!("this debug message is filtered out");
+    ferrilog::info!("this info message is filtered out");
+    ferrilog::warn!("this warning IS visible");
+    ferrilog::error!("this error IS visible");
 
     poll(true).unwrap();
 
@@ -173,7 +173,7 @@ fn main() {
     let log_path_str = log_path.to_str().unwrap();
 
     set_log_file(log_path_str).unwrap();
-    ferrilog::logi!("this message goes to the log file");
+    ferrilog::info!("this message goes to the log file");
     poll(true).unwrap();
 
     println!("Log file written to: {}", log_path.display());
@@ -189,17 +189,17 @@ fn main() {
 
     // Minimal header: just level and a separator
     set_header_pattern("{level} | ").unwrap();
-    ferrilog::logi!("minimal header style");
+    ferrilog::info!("minimal header style");
     poll(true).unwrap();
 
     // Compact header without date/time
     set_header_pattern("{level} [{thread}] {location} - ").unwrap();
-    ferrilog::logi!("compact header without timestamp");
+    ferrilog::info!("compact header without timestamp");
     poll(true).unwrap();
 
     // Empty header: body only
     set_header_pattern("").unwrap();
-    ferrilog::logi!("body only, no header at all");
+    ferrilog::info!("body only, no header at all");
     poll(true).unwrap();
 
     // Restore default-style header
@@ -213,7 +213,7 @@ fn main() {
     // Start the background polling thread with a 1ms poll interval (in nanoseconds).
     start_polling_thread(1_000_000).unwrap();
 
-    ferrilog::logi!("this is written by the background poller");
+    ferrilog::info!("this is written by the background poller");
 
     // Give the poller a moment to pick up the message
     thread::sleep(Duration::from_millis(50));
@@ -236,8 +236,8 @@ fn main() {
     // flush_on: immediately flush when a message at this level (or above) is logged.
     flush_on(Level::ERR); // auto-flush on every error
 
-    ferrilog::logi!("info message, buffered until delay/size threshold");
-    ferrilog::loge!("error message triggers immediate flush");
+    ferrilog::info!("info message, buffered until delay/size threshold");
+    ferrilog::error!("error message triggers immediate flush");
     poll(true).unwrap();
 
     // Reset to defaults
@@ -260,7 +260,7 @@ fn main() {
             set_thread_name(&format!("worker-{}", thread_index));
 
             for message_index in 0..5u32 {
-                ferrilog::logi!(
+                ferrilog::info!(
                     "thread {} message {} value={}",
                     thread_index,
                     message_index,
@@ -298,7 +298,7 @@ fn main() {
         eprintln!("queue full event #{}", count);
     }));
 
-    ferrilog::logi!("queue full policy is now Block with a callback");
+    ferrilog::info!("queue full policy is now Block with a callback");
     poll(true).unwrap();
 
     // Clear the callback and restore default policy

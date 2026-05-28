@@ -47,7 +47,7 @@ fn capture_output<F: FnOnce()>(level: Level, action: F) -> String {
 #[test]
 fn test_logd() {
     let output = capture_output(Level::DBG, || {
-        ferrilog::logd!("debug value={}", 42u32);
+        ferrilog::debug!("debug value={}", 42u32);
     });
     assert!(output.contains("DBG"), "output: {output}");
     assert!(output.contains("debug value=42"), "output: {output}");
@@ -56,7 +56,7 @@ fn test_logd() {
 #[test]
 fn test_logi() {
     let output = capture_output(Level::DBG, || {
-        ferrilog::logi!("info message={}", "hello");
+        ferrilog::info!("info message={}", "hello");
     });
     assert!(output.contains("INF"), "output: {output}");
     assert!(output.contains("info message=hello"), "output: {output}");
@@ -65,7 +65,7 @@ fn test_logi() {
 #[test]
 fn test_logw() {
     let output = capture_output(Level::DBG, || {
-        ferrilog::logw!("warning count={}", 99u64);
+        ferrilog::warn!("warning count={}", 99u64);
     });
     assert!(output.contains("WRN"), "output: {output}");
     assert!(output.contains("warning count=99"), "output: {output}");
@@ -74,7 +74,7 @@ fn test_logw() {
 #[test]
 fn test_loge() {
     let output = capture_output(Level::DBG, || {
-        ferrilog::loge!("error code={}", -1i32);
+        ferrilog::error!("error code={}", -1i32);
     });
     assert!(output.contains("ERR"), "output: {output}");
     assert!(output.contains("error code=-1"), "output: {output}");
@@ -83,8 +83,8 @@ fn test_loge() {
 #[test]
 fn test_logd_filtered_by_level() {
     let output = capture_output(Level::INF, || {
-        ferrilog::logd!("should not appear={}", 0u32);
-        ferrilog::logi!("should appear={}", 1u32);
+        ferrilog::debug!("should not appear={}", 0u32);
+        ferrilog::info!("should appear={}", 1u32);
     });
     assert!(!output.contains("should not appear"), "output: {output}");
     assert!(output.contains("should appear=1"), "output: {output}");
@@ -93,7 +93,7 @@ fn test_logd_filtered_by_level() {
 #[test]
 fn test_no_args() {
     let output = capture_output(Level::DBG, || {
-        ferrilog::logi!("plain message no args");
+        ferrilog::info!("plain message no args");
     });
     assert!(output.contains("plain message no args"), "output: {output}");
 }

@@ -61,7 +61,20 @@ impl HeaderDateCache {
     }
 }
 
-pub type StaticHeaderWriteFn = fn(&mut HeaderDateCache, &mut Vec<u8>, i64, Level, &[u8], &str);
+/// Appends a span id to `output`, using `-` for the root/no-span id.
+#[inline]
+pub fn append_span_id(output: &mut Vec<u8>, span_id: u64) {
+    if span_id == 0 {
+        output.push(b'-');
+        return;
+    }
+
+    let mut buffer = [0u8; 20];
+    let len = number_format::format_u64(&mut buffer, span_id);
+    output.extend_from_slice(&buffer[..len]);
+}
+
+pub type StaticHeaderWriteFn = fn(&mut HeaderDateCache, &mut Vec<u8>, i64, Level, &[u8], &str, u64);
 
 #[derive(Debug, Clone)]
 pub struct StaticHeader {
@@ -82,8 +95,17 @@ impl StaticHeader {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        span_id: u64,
     ) {
-        (self.write)(&mut self.date_cache, output, nanoseconds, level, thread_name, location);
+        (self.write)(
+            &mut self.date_cache,
+            output,
+            nanoseconds,
+            level,
+            thread_name,
+            location,
+            span_id,
+        );
     }
 }
 
@@ -112,6 +134,7 @@ impl DefaultHeader {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        _span_id: u64,
     ) {
         self.date_cache.ensure_date(nanoseconds);
         output.reserve(DEFAULT_HEADER_FIXED_LEN + thread_name.len() + location.len());
@@ -148,6 +171,7 @@ impl LevelThreadLocationHeader {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        _span_id: u64,
     ) {
         output.reserve(LEVEL_THREAD_LOCATION_HEADER_FIXED_LEN + thread_name.len() + location.len());
         output.extend_from_slice(level.as_bytes());
@@ -172,6 +196,8 @@ pub enum HeaderToken {
     Nanosecond,
     /// The log level.
     Level,
+    /// The current span id (`-` when no span is active).
+    SpanId,
     /// The thread name.
     ThreadName,
     /// The source location.
@@ -194,8 +220,8 @@ impl TokenizedHeader {
 
     /// Parses a header pattern string into a `TokenizedHeader`.
     ///
-    /// Supported placeholders: `{date}`, `{time}`, `{ns}`, `{level}`, `{thread}`, `{location}`.
-    /// Use `{{` and `}}` for literal braces.
+    /// Supported placeholders: `{date}`, `{time}`, `{ns}`, `{level}`, `{span}`, `{thread}`,
+    /// `{location}`. Use `{{` and `}}` for literal braces.
     pub fn parse_pattern(pattern: &str) -> io::Result<Self> {
         let mut pattern_buffer = Vec::new();
         let mut tokens = Vec::new();
@@ -269,8 +295,9 @@ impl TokenizedHeader {
         level: Level,
         thread_name: &[u8],
         location: &str,
+        span_id: u64,
     ) {
-        output.reserve(self.pattern_buffer.len() + thread_name.len() + location.len() + 32);
+        output.reserve(self.pattern_buffer.len() + thread_name.len() + location.len() + 52);
 
         for index in 0..self.tokens.len() {
             match self.tokens[index] {
@@ -283,6 +310,7 @@ impl TokenizedHeader {
                 HeaderToken::Time => append_header_time(output, nanoseconds),
                 HeaderToken::Nanosecond => append_header_nanoseconds(output, nanoseconds),
                 HeaderToken::Level => output.extend_from_slice(level.as_bytes()),
+                HeaderToken::SpanId => append_span_id(output, span_id),
                 HeaderToken::ThreadName => output.extend_from_slice(thread_name),
                 HeaderToken::Location => output.extend_from_slice(location.as_bytes()),
             }
@@ -315,6 +343,7 @@ fn parse_named_token(name: &str) -> io::Result<HeaderToken> {
         "time" => Ok(HeaderToken::Time),
         "ns" => Ok(HeaderToken::Nanosecond),
         "level" => Ok(HeaderToken::Level),
+        "span" => Ok(HeaderToken::SpanId),
         "thread" => Ok(HeaderToken::ThreadName),
         "location" => Ok(HeaderToken::Location),
         _ => Err(io::Error::new(
@@ -419,6 +448,7 @@ mod tests {
             Level::INF,
             b"worker-1",
             "src/main.rs:10",
+            0,
         );
         let string = String::from_utf8(output).unwrap();
         assert!(string.contains("INF|worker-1|src/main.rs:10|"));
@@ -439,6 +469,7 @@ mod tests {
             Level::INF,
             b"worker-1",
             "src/main.rs:10",
+            0,
         );
         specialized.write_header(
             &mut specialized_output,
@@ -446,6 +477,7 @@ mod tests {
             Level::INF,
             b"worker-1",
             "src/main.rs:10",
+            0,
         );
 
         assert_eq!(specialized_output, tokenized_output);
@@ -466,6 +498,7 @@ mod tests {
             Level::INF,
             b"worker-1",
             "src/main.rs:10",
+            0,
         );
         specialized.write_header(
             &mut specialized_output,
@@ -473,8 +506,21 @@ mod tests {
             Level::INF,
             b"worker-1",
             "src/main.rs:10",
+            0,
         );
 
         assert_eq!(specialized_output, tokenized_output);
+    }
+
+    #[test]
+    fn span_header_token_renders_dash_for_root_and_decimal_for_span() {
+        let mut header = TokenizedHeader::parse_pattern("{level}|span={span}|").unwrap();
+        let mut root = Vec::new();
+        header.write_header(&mut root, 0, Level::TRC, b"worker-1", "src/main.rs:10", 0);
+        assert_eq!(String::from_utf8(root).unwrap(), "TRC|span=-|");
+
+        let mut span = Vec::new();
+        header.write_header(&mut span, 0, Level::TRC, b"worker-1", "src/main.rs:10", 42);
+        assert_eq!(String::from_utf8(span).unwrap(), "TRC|span=42|");
     }
 }

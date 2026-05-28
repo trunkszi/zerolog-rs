@@ -144,7 +144,7 @@ fn log_and_derive_encode_work() {
     let point = Point { x: 7, y: 9 };
     let text = String::from("fast");
     ferrilog::log!(INFO, "point={}", point);
-    ferrilog::logi!("value={} text={}", 64u32, text);
+    ferrilog::info!("value={} text={}", 64u32, text);
     poll(true).unwrap();
 
     let output = String::from_utf8(buffer.lock().unwrap().clone()).unwrap();
@@ -379,7 +379,7 @@ fn file_write_multi_thread() {
             thread::spawn(move || {
                 ferrilog::set_thread_name(&format!("writer-{thread_index}"));
                 for message_index in 0..PER_THREAD as u32 {
-                    ferrilog::logi!("tid={} seq={}", thread_index as u32, message_index);
+                    ferrilog::info!("tid={} seq={}", thread_index as u32, message_index);
                 }
             })
         })
@@ -431,7 +431,7 @@ fn file_flush_on_level() {
 
     // Write several INFO messages and poll — they should be buffered, NOT flushed
     for i in 0..5u32 {
-        ferrilog::logi!("buffered={}", i);
+        ferrilog::info!("buffered={}", i);
     }
     poll(false).unwrap();
     let content_before = fs::read_to_string(&path).unwrap_or_default();
@@ -442,7 +442,7 @@ fn file_flush_on_level() {
 
     // Now write an ERR message and poll — this should trigger an immediate flush
     // of ALL pending output (the 5 INFO messages + the ERR message)
-    ferrilog::loge!("trigger-flush");
+    ferrilog::error!("trigger-flush");
     poll(false).unwrap();
 
     let content_after = wait_until_contains(&path, "trigger-flush", Duration::from_secs(2));

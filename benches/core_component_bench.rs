@@ -41,6 +41,7 @@ fn write_static_complex_header(
     level: ferrilog_core::Level,
     thread_name: &[u8],
     location: &str,
+    _span_id: u64,
 ) {
     output.reserve(37 + thread_name.len() + location.len());
     output.extend_from_slice(thread_name);
@@ -615,6 +616,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -633,6 +635,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -658,6 +661,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -676,6 +680,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -695,6 +700,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -714,6 +720,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                     INFO,
                     b"bench-thread",
                     "core/benches/core_component_bench.rs:1",
+                    0u64,
                 );
                 black_box(output);
             },
@@ -735,6 +742,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                         INFO,
                         b"bench-thread",
                         "core/benches/core_component_bench.rs:1",
+                        0u64,
                         |buffer| number_format::append_u32(buffer, 42),
                     )
                     .unwrap();
@@ -754,7 +762,7 @@ fn bench_header_output(criterion: &mut Criterion) {
             },
             |mut output| {
                 output
-                    .write_record(black_box(0), INFO, b"bench", "bench", |buffer| unsafe {
+                    .write_record(black_box(0), INFO, b"bench", "bench", 0, |buffer| unsafe {
                         decode_static_body(std::ptr::null(), buffer);
                     })
                     .unwrap();
@@ -779,6 +787,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                         INFO,
                         b"bench-thread",
                         "core/benches/core_component_bench.rs:1",
+                        0u64,
                         |buffer| number_format::append_u32(buffer, 42),
                     )
                     .unwrap();
@@ -803,6 +812,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                         INFO,
                         b"bench-thread",
                         "core/benches/core_component_bench.rs:1",
+                        0u64,
                         |buffer| number_format::append_u32(buffer, 42),
                     )
                     .unwrap();
@@ -827,6 +837,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                         INFO,
                         b"bench-thread",
                         "core/benches/core_component_bench.rs:1",
+                        0u64,
                         |buffer| number_format::append_u32(buffer, 42),
                     )
                     .unwrap();
@@ -848,6 +859,7 @@ fn bench_header_output(criterion: &mut Criterion) {
                             INFO,
                             b"bench-thread",
                             "core/benches/core_component_bench.rs:1",
+                            0u64,
                             |buffer| number_format::append_u32(buffer, index),
                         )
                         .unwrap();

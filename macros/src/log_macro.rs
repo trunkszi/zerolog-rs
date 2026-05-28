@@ -265,6 +265,7 @@ fn expand_log_inner(
         {
             let __ferrilog_level: ::ferrilog::Level = #level;
             if ::ferrilog::check_level(__ferrilog_level) {
+                let __ferrilog_span_id = ::ferrilog::current_span_id_u64();
                 #(#arg_bindings)*
                 #make_decoder
                 #encoded_size_fn
@@ -298,6 +299,11 @@ fn expand_log_inner(
                             .add(::ferrilog::PAYLOAD_TIMESTAMP_OFFSET)
                             .cast::<i64>()
                             .write_unaligned(__ferrilog_timestamp);
+                        // Write current span id
+                        __ferrilog_buffer
+                            .add(::ferrilog::PAYLOAD_SPAN_ID_OFFSET)
+                            .cast::<u64>()
+                            .write_unaligned(__ferrilog_span_id);
                         // Write encoded arguments
                         #encode_payload
                         (*__ferrilog_header).push(__ferrilog_payload_size);
@@ -347,6 +353,7 @@ pub(crate) fn expand_set_header_pattern_static(input: HeaderPatternInput) -> Tok
     let reserve_base = Literal::usize_unsuffixed(pattern.fixed_len);
     let reserve_thread = pattern.uses_thread.then(|| quote!(+ thread_name.len())).into_iter();
     let reserve_location = pattern.uses_location.then(|| quote!(+ location.len())).into_iter();
+    let reserve_span = pattern.uses_span.then(|| quote!(+ 20usize)).into_iter();
     let statements = pattern.segments.iter().map(|segment| match segment {
         HeaderSegment::Literal(bytes) => {
             let literal = Literal::byte_string(bytes);
@@ -363,6 +370,9 @@ pub(crate) fn expand_set_header_pattern_static(input: HeaderPatternInput) -> Tok
         },
         HeaderSegment::Level => quote! {
             output.extend_from_slice(level.as_bytes());
+        },
+        HeaderSegment::Span => quote! {
+            ::ferrilog::append_span_id(output, span_id);
         },
         HeaderSegment::ThreadName => quote! {
             output.extend_from_slice(thread_name);
@@ -382,8 +392,9 @@ pub(crate) fn expand_set_header_pattern_static(input: HeaderPatternInput) -> Tok
                 level: ::ferrilog::Level,
                 thread_name: &[u8],
                 location: &str,
+                span_id: u64,
             ) {
-                output.reserve(#reserve_base #(#reserve_thread)* #(#reserve_location)*);
+                output.reserve(#reserve_base #(#reserve_thread)* #(#reserve_location)* #(#reserve_span)*);
                 #(#statements)*
             }
 
@@ -399,6 +410,7 @@ enum HeaderSegment {
     Time,
     Nanosecond,
     Level,
+    Span,
     ThreadName,
     Location,
 }
@@ -409,6 +421,7 @@ struct ParsedHeaderPattern {
     fixed_len: usize,
     uses_thread: bool,
     uses_location: bool,
+    uses_span: bool,
 }
 
 fn parse_header_pattern_literal(pattern: &LitStr) -> Result<ParsedHeaderPattern> {
@@ -420,6 +433,7 @@ fn parse_header_pattern_literal(pattern: &LitStr) -> Result<ParsedHeaderPattern>
     let mut fixed_len = 0usize;
     let mut uses_thread = false;
     let mut uses_location = false;
+    let mut uses_span = false;
 
     while index < bytes.len() {
         match bytes[index] {
@@ -461,6 +475,10 @@ fn parse_header_pattern_literal(pattern: &LitStr) -> Result<ParsedHeaderPattern>
                         fixed_len += 3;
                         HeaderSegment::Level
                     }
+                    "span" => {
+                        uses_span = true;
+                        HeaderSegment::Span
+                    }
                     "thread" => {
                         uses_thread = true;
                         HeaderSegment::ThreadName
@@ -499,5 +517,5 @@ fn parse_header_pattern_literal(pattern: &LitStr) -> Result<ParsedHeaderPattern>
         segments.push(HeaderSegment::Literal(literal));
     }
 
-    Ok(ParsedHeaderPattern { segments, fixed_len, uses_thread, uses_location })
+    Ok(ParsedHeaderPattern { segments, fixed_len, uses_thread, uses_location, uses_span })
 }

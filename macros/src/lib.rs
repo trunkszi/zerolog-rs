@@ -1,7 +1,7 @@
 //! Procedural macros for the `ferrilog` crate.
 //!
 //! Provides the [`log!`] macro, level-specific convenience macros
-//! (`logd!`, `logi!`, `logw!`, `loge!`), and the [`Encode`](derive@Encode)
+//! (`trace!`, `debug!`, `info!`, `warn!`, `error!`), and the [`Encode`](derive@Encode)
 //! derive macro.
 
 mod derive_encode;

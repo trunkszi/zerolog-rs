@@ -108,10 +108,13 @@ pub const PAYLOAD_INFO_OFFSET: usize = 0;
 /// Byte offset of the `i64` timestamp within the payload.
 pub const PAYLOAD_TIMESTAMP_OFFSET: usize = PAYLOAD_INFO_OFFSET + size_of::<usize>();
 
-/// Byte offset where encoded arguments begin within the payload.
-pub const PAYLOAD_ARGS_OFFSET: usize = PAYLOAD_TIMESTAMP_OFFSET + size_of::<i64>();
+/// Byte offset of the `u64` current span id within the payload.
+pub const PAYLOAD_SPAN_ID_OFFSET: usize = PAYLOAD_TIMESTAMP_OFFSET + size_of::<i64>();
 
-/// Fixed overhead per message (info pointer + timestamp) before encoded arguments.
+/// Byte offset where encoded arguments begin within the payload.
+pub const PAYLOAD_ARGS_OFFSET: usize = PAYLOAD_SPAN_ID_OFFSET + size_of::<u64>();
+
+/// Fixed overhead per message (info pointer + timestamp + span id) before encoded arguments.
 pub const PAYLOAD_HEADER_SIZE: usize = PAYLOAD_ARGS_OFFSET;
 
 /// Message header. `size` is the cross-thread control word (`AtomicU32`).
@@ -120,12 +123,12 @@ pub const PAYLOAD_HEADER_SIZE: usize = PAYLOAD_ARGS_OFFSET;
 /// immediately follows and stores:
 ///
 /// ```text
-/// [info_ptr: *const StaticInfo (8B)] [timestamp: i64 (8B)] [encoded args...]
+/// [info_ptr: *const StaticInfo (8B)] [timestamp: i64 (8B)] [span_id: u64 (8B)] [encoded args...]
 /// ```
 ///
 /// Layout constants [`PAYLOAD_INFO_OFFSET`], [`PAYLOAD_TIMESTAMP_OFFSET`],
-/// [`PAYLOAD_ARGS_OFFSET`], and [`PAYLOAD_HEADER_SIZE`] describe the payload
-/// structure.
+/// [`PAYLOAD_SPAN_ID_OFFSET`], [`PAYLOAD_ARGS_OFFSET`], and
+/// [`PAYLOAD_HEADER_SIZE`] describe the payload structure.
 #[repr(C)]
 pub struct MessageHeader {
     /// Total message size in bytes (header + payload), used as an atomic control word.

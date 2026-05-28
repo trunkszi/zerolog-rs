@@ -8,6 +8,7 @@ pub mod logger;
 pub mod number_format;
 pub mod output;
 pub mod poller;
+pub mod span;
 pub mod spsc_queue;
 pub mod thread_buffer;
 pub mod timestamp_counter;
@@ -27,7 +28,7 @@ pub use encode::{Encode, EncodeFast};
 #[doc(hidden)]
 pub use header::{
     HeaderDateCache, StaticHeader, StaticHeaderWriteFn, append_header_nanoseconds,
-    append_header_time,
+    append_header_time, append_span_id,
 };
 #[doc(hidden)]
 pub use logger::{DecodeFn, StaticInfo, check_level, set_static_header};
@@ -38,9 +39,14 @@ pub use logger::{
     start_polling_thread, start_polling_thread_on_core, stop_polling_thread,
 };
 pub use output::RotationConfig;
+pub use span::{
+    Instrument, Instrumented, ROOT_SPAN_ID, Span, SpanGuard, SpanId, StaticSpanInfo,
+    current_span_id, current_span_id_u64,
+};
 #[doc(hidden)]
 pub use spsc_queue::{
-    PAYLOAD_ARGS_OFFSET, PAYLOAD_HEADER_SIZE, PAYLOAD_INFO_OFFSET, PAYLOAD_TIMESTAMP_OFFSET,
+    PAYLOAD_ARGS_OFFSET, PAYLOAD_HEADER_SIZE, PAYLOAD_INFO_OFFSET, PAYLOAD_SPAN_ID_OFFSET,
+    PAYLOAD_TIMESTAMP_OFFSET,
 };
 #[doc(hidden)]
 pub use thread_buffer::alloc_message;
@@ -52,16 +58,18 @@ pub use timestamp_counter::TimestampCounter;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Level {
+    /// Trace level.
+    TRC = 0,
     /// Debug level.
-    DBG = 0,
+    DBG = 1,
     /// Info level.
-    INF = 1,
+    INF = 2,
     /// Warning level.
-    WRN = 2,
+    WRN = 3,
     /// Error level.
-    ERR = 3,
+    ERR = 4,
     /// Logging disabled.
-    OFF = 4,
+    OFF = 5,
 }
 
 impl Level {
@@ -69,6 +77,7 @@ impl Level {
     #[inline]
     pub fn as_bytes(&self) -> &'static [u8] {
         match self {
+            Level::TRC => b"TRC",
             Level::DBG => b"DBG",
             Level::INF => b"INF",
             Level::WRN => b"WRN",
@@ -82,14 +91,17 @@ impl Level {
 #[inline]
 pub fn level_from_u8(value: u8) -> Level {
     match value {
-        0 => Level::DBG,
-        1 => Level::INF,
-        2 => Level::WRN,
-        3 => Level::ERR,
+        0 => Level::TRC,
+        1 => Level::DBG,
+        2 => Level::INF,
+        3 => Level::WRN,
+        4 => Level::ERR,
         _ => Level::OFF,
     }
 }
 
+/// Shorthand constant for [`Level::TRC`].
+pub const TRC: Level = Level::TRC;
 /// Shorthand constant for [`Level::DBG`].
 pub const DBG: Level = Level::DBG;
 /// Shorthand constant for [`Level::INF`].
@@ -101,6 +113,8 @@ pub const ERR: Level = Level::ERR;
 /// Shorthand constant for [`Level::OFF`].
 pub const OFF: Level = Level::OFF;
 
+/// Alias for [`Level::TRC`].
+pub const TRACE: Level = Level::TRC;
 /// Alias for [`Level::DBG`].
 pub const DEBUG: Level = Level::DBG;
 /// Alias for [`Level::INF`].

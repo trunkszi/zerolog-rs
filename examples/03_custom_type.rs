@@ -46,12 +46,12 @@ fn main() -> std::io::Result<()> {
     let o = Order { id: 100001, price: 49.99, qty: 50 };
 
     // Log custom types with the default {} placeholder.
-    ferrilog::logi!("point = {}", p);
-    ferrilog::logi!("order = {}", o);
+    ferrilog::info!("point = {}", p);
+    ferrilog::info!("order = {}", o);
 
     // Format specifiers are applied through the Display trait.
-    ferrilog::logi!("padded point: [{:^20}]", p);
-    ferrilog::logi!("padded order: [{:>40}]", o);
+    ferrilog::info!("padded point: [{:^20}]", p);
+    ferrilog::info!("padded order: [{:>40}]", o);
 
     Ok(())
 }
