@@ -1,0 +1,14 @@
+# Clippy configuration for zerolog
+# https://doc.rust-lang.org/clippy/configuration.html
+
+# Maximum lines in a single function body
+too-many-lines-threshold = 120
+
+# Cognitive complexity threshold
+cognitive-complexity-threshold = 30
+
+# Maximum function parameters before warning
+too-many-arguments-threshold = 8
+
+# MSRV — not applicable (nightly-only crate)
+# msrv = "nightly"

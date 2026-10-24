@@ -1,0 +1,8 @@
+# Rustfmt configuration for zerolog
+# https://rust-lang.github.io/rustfmt/
+
+edition = "2024"
+max_width = 100
+use_small_heuristics = "Max"
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"

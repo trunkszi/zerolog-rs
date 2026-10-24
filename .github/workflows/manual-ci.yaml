@@ -1,0 +1,127 @@
+name: Manual CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Choose which job to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - test
+          - bench
+          - clippy
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    if: ${{ github.event.inputs.job == 'all' || github.event.inputs.job == 'test' }}
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        run: |
+          cargo fmt --all
+          git diff --exit-code || (echo "::error::Code is not formatted. Run 'cargo fmt --all' locally." && exit 1)
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Build examples
+        run: cargo build --examples
+
+      - name: Test with buffer-1m
+        run: cargo test --no-default-features --features buffer-1m
+
+      - name: Test with buffer-4m
+        run: cargo test --no-default-features --features buffer-4m
+
+  bench:
+    if: ${{ github.event.inputs.job == 'all' || github.event.inputs.job == 'bench' }}
+    name: benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-
+
+      - name: Run latency benchmarks
+        run: cargo bench --bench latency_throughput -- 'latency/'
+
+      - name: Run throughput benchmarks
+        run: cargo bench --bench latency_throughput -- 'throughput'
+
+      - name: Run core component benchmarks
+        run: cargo bench --bench core_component_bench
+
+  clippy:
+    if: ${{ github.event.inputs.job == 'all' || github.event.inputs.job == 'clippy' }}
+    name: clippy strict
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Clippy (deny all warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Clippy with all buffer features
+        run: |
+          for feature in buffer-1m buffer-2m buffer-4m buffer-8m buffer-16m buffer-32m buffer-64m; do
+            echo "=== clippy with $feature ==="
+            cargo clippy --no-default-features --features "$feature" -- -D warnings
+          done

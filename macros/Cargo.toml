@@ -1,0 +1,16 @@
+[package]
+name = "zerolog-macros"
+version = "0.1.1"
+edition = "2024"
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "Proc macros for zerolog-rs: log!() macro and #[derive(Encode)]"
+license = "MIT"
+repository = "https://github.com/trunkszi/zerolog-rs"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true }
+syn = { workspace = true }
+quote = { workspace = true }
