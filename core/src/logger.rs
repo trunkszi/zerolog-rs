@@ -562,6 +562,9 @@ mod tests {
     std::thread_local! {
         static ALLOCATIONS: Cell<Option<usize>> = const { Cell::new(None) };
     }
+    // Local logger instances still consume the process-wide thread-buffer registry.
+    static REGISTRY_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     struct CountingAllocator;
     fn count_allocation() {
         let _ = ALLOCATIONS.try_with(|count| {
@@ -616,6 +619,8 @@ mod tests {
 
     #[test]
     fn warmed_poll_reuses_registry_and_heap_storage() {
+        let _registry_guard =
+            REGISTRY_TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         set_output_writer(io::sink());
         set_header_pattern("").unwrap();
         publish_empty_body();
@@ -631,6 +636,8 @@ mod tests {
     }
     #[test]
     fn local_consumer_serializes_poll_and_configuration() {
+        let _registry_guard =
+            REGISTRY_TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let logger = std::sync::Arc::new(GlobalLogger::new());
         logger
             .configure(|inner| {
@@ -669,6 +676,8 @@ mod tests {
 
     #[test]
     fn consumer_and_lifecycle_guards_release_after_configuration_unwind() {
+        let _registry_guard =
+            REGISTRY_TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let logger = GlobalLogger::new();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let _: io::Result<()> = logger.configure(|inner| {

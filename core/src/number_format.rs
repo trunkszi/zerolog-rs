@@ -18,27 +18,40 @@ pub static DIGIT_PAIRS: [u8; 200] = *b"00010203040506070809\
 // --- Fixed-width formatting (header time fields) ---
 
 /// Fixed-width integer formatting. The compiler fully unrolls the loop for const `WIDTH`.
-/// Uses a digit-pairs lookup table to process two digits per iteration.
+/// Combines digit-pair lookups into four-digit groups.
 #[inline(always)]
 pub fn format_fixed_width<const WIDTH: usize>(buffer: &mut [u8; WIDTH], mut number: u64) {
     if WIDTH & 1 == 1 {
         buffer[WIDTH - 1] = b'0' + (number % 10) as u8;
         number /= 10;
     }
-    let mut position: isize = (WIDTH & !1) as isize - 2;
-    while position >= 0 {
-        let index = ((number % 100) as usize) << 1;
-        buffer[position as usize] = DIGIT_PAIRS[index];
-        buffer[position as usize + 1] = DIGIT_PAIRS[index + 1];
-        number /= 100;
-        position -= 2;
+    let mut position = WIDTH & !1;
+    while position >= 4 {
+        position -= 4;
+        write_four_digits(&mut buffer[position..position + 4], (number % 10_000) as u32);
+        number /= 10_000;
     }
+    if position == 2 {
+        write_two_digits(&mut buffer[..2], (number % 100) as u32);
+    }
+}
+
+#[inline(always)]
+fn write_two_digits(output: &mut [u8], number: u32) {
+    let index = (number as usize) * 2;
+    output[..2].copy_from_slice(&DIGIT_PAIRS[index..index + 2]);
+}
+
+#[inline(always)]
+fn write_four_digits(output: &mut [u8], number: u32) {
+    write_two_digits(&mut output[..2], number / 100);
+    write_two_digits(&mut output[2..4], number % 100);
 }
 
 // --- Variable-length formatting (user arguments) ---
 
 /// Counts the number of decimal digits in a `u64`.
-/// Algorithm: approximate via `leading_zeros`, then correct with a table lookup. ~5 branchless instructions.
+/// Approximates via `leading_zeros`, then corrects using a power-of-ten table.
 #[inline(always)]
 pub fn count_digits_u64(number: u64) -> usize {
     static POWERS: [u64; 20] = [
@@ -67,7 +80,7 @@ pub fn count_digits_u64(number: u64) -> usize {
         return 1;
     }
     let bits = 64 - number.leading_zeros() as usize;
-    let guess = (bits * 77) >> 8; // log10(2) ≈ 77/256
+    let guess = (bits * 77) >> 8; // log10(2) is approximately 77/256.
     guess + (number >= POWERS[guess]) as usize
 }
 
@@ -84,21 +97,19 @@ pub fn format_u64(output: &mut [u8], mut number: u64) -> usize {
     let length = count_digits_u64(number);
     debug_assert!(output.len() >= length);
 
-    // Process 2 digits at a time, starting from the least significant
     let mut position = length;
-    while number >= 100 {
+    while number >= 10_000 {
+        position -= 4;
+        write_four_digits(&mut output[position..position + 4], (number % 10_000) as u32);
+        number /= 10_000;
+    }
+    if number >= 100 {
         position -= 2;
-        let index = ((number % 100) as usize) << 1;
-        output[position] = DIGIT_PAIRS[index];
-        output[position + 1] = DIGIT_PAIRS[index + 1];
+        write_two_digits(&mut output[position..position + 2], (number % 100) as u32);
         number /= 100;
     }
-
-    // Remaining 1 or 2 digits
     if number >= 10 {
-        let index = (number as usize) << 1;
-        output[0] = DIGIT_PAIRS[index];
-        output[1] = DIGIT_PAIRS[index + 1];
+        write_two_digits(&mut output[..2], number as u32);
     } else {
         output[0] = b'0' + number as u8;
     }
@@ -124,18 +135,18 @@ pub fn format_u32(output: &mut [u8], mut number: u32) -> usize {
     debug_assert!(output.len() >= length);
 
     let mut position = length;
-    while number >= 100 {
+    while number >= 10_000 {
+        position -= 4;
+        write_four_digits(&mut output[position..position + 4], number % 10_000);
+        number /= 10_000;
+    }
+    if number >= 100 {
         position -= 2;
-        let index = ((number % 100) as usize) << 1;
-        output[position] = DIGIT_PAIRS[index];
-        output[position + 1] = DIGIT_PAIRS[index + 1];
+        write_two_digits(&mut output[position..position + 2], number % 100);
         number /= 100;
     }
-
     if number >= 10 {
-        let index = (number as usize) << 1;
-        output[0] = DIGIT_PAIRS[index];
-        output[1] = DIGIT_PAIRS[index + 1];
+        write_two_digits(&mut output[..2], number);
     } else {
         output[0] = b'0' + number as u8;
     }
@@ -430,5 +441,34 @@ pub fn append_bool(output: &mut Vec<u8>, value: bool) {
         output.extend_from_slice(b"true");
     } else {
         output.extend_from_slice(b"false");
+    }
+}
+
+#[cfg(test)]
+mod decimal_scenarios {
+    use super::*;
+    #[test]
+    fn decimal_groups_match_standard_formatting() {
+        let mut output = [0_u8; 21];
+        for value in 0..=u16::MAX {
+            let expected = value.to_string();
+            let len = format_u32(&mut output, u32::from(value));
+            assert_eq!(&output[..len], expected.as_bytes());
+            let len = format_u64(&mut output, u64::from(value));
+            assert_eq!(&output[..len], expected.as_bytes());
+        }
+        for power in 0..20 {
+            let base = 10_u64.pow(power);
+            for value in [base - 1, base, base.saturating_add(1), u64::MAX] {
+                let len = format_u64(&mut output, value);
+                assert_eq!(&output[..len], value.to_string().as_bytes());
+            }
+        }
+        let mut fixed = [0; 9];
+        format_fixed_width(&mut fixed, 12_340_000_009);
+        assert_eq!(&fixed, b"340000009");
+        format_fixed_width(&mut [0; 0], u64::MAX);
+        let len = format_i64(&mut output, i64::MIN);
+        assert_eq!(&output[..len], b"-9223372036854775808");
     }
 }

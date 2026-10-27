@@ -1,8 +1,11 @@
+#[path = "support/allocations.rs"]
+mod allocations;
 use std::{
     hint::black_box,
     time::{Duration, Instant},
 };
 
+use allocations::assert_zero_alloc;
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use zerolog::{
     Encode, EncodeConstDefaultFormat, FORMAT_ALIGN_CENTER, INFO, OFF, append_display_with_spec,
@@ -215,6 +218,22 @@ fn bench_enqueue_only_body_only(criterion: &mut Criterion) {
     emit_padded_point(Point { x: 7, y: 9 });
     poll(true).unwrap();
 
+    assert_zero_alloc(|| {
+        emit_no_args();
+        emit_u32(42);
+        emit_fast_u32(42);
+        emit_u32_str(42, "fast");
+        emit_fast_u32_str(42, "fast");
+        emit_u32_pair(42, 7);
+        emit_hex(255);
+        emit_padded_u32(42);
+        emit_padded_hex(42);
+        emit_signed_padded_hex(-42);
+        emit_scientific_f64(std::f64::consts::PI);
+        emit_point(Point { x: 7, y: 9 });
+        emit_padded_point(Point { x: 7, y: 9 });
+    });
+    poll(true).unwrap();
     let mut group = criterion.benchmark_group("enqueue_only_body_only");
 
     group.bench_function("log_no_args", |bencher| {
