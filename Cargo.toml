@@ -11,6 +11,7 @@ keywords = ["logging", "lock-free", "low-latency", "structured-logging", "async"
 categories = ["development-tools::debugging"]
 
 [lib]
+bench = false
 name = "zerolog"
 path = "src/lib.rs"
 
@@ -43,6 +44,10 @@ harness = false
 name = "core_component_bench"
 harness = false
 
+[[bench]]
+name = "poller_header_bench"
+harness = false
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
@@ -65,4 +70,4 @@ libc = "0.2"
 proc-macro2 = "1"
 syn = { version = "2", features = ["full"] }
 quote = "1"
-criterion = "0.8.2"
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }

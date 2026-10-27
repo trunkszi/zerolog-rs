@@ -232,8 +232,8 @@ impl SpscVarQueue {
         // SAFETY: producer fields are accessed only by the unique producer.
         // Atomic references cover only atomic fields, never the whole queue.
         unsafe {
-            let block_size =
-                (u64::from(size) + HEADER_SIZE as u64).div_ceil(HEADER_SIZE as u64) as u32;
+            // The checked payload bound leaves room for header and rounding in u32.
+            let block_size = (size + HEADER_SIZE as u32).div_ceil(HEADER_SIZE as u32);
             let write_ptr = UnsafeCell::raw_get(&raw const (*this).write_index);
             let free_ptr = UnsafeCell::raw_get(&raw const (*this).free_write_count);
             let mut write = write_ptr.read();

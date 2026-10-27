@@ -9,12 +9,14 @@ use super::{
 // The complete length-prefixed representation must fit in a u32 payload.
 const MAX_STR_LEN: usize = (u32::MAX as usize) - 4;
 
+#[inline(always)]
 fn bounded_len(value: &str) -> usize {
-    let mut len = value.len().min(MAX_STR_LEN);
-    while !value.is_char_boundary(len) {
-        len -= 1;
-    }
-    len
+    if value.len() <= MAX_STR_LEN { value.len() } else { bounded_len_slow(value) }
+}
+
+#[cold]
+fn bounded_len_slow(value: &str) -> usize {
+    value.floor_char_boundary(MAX_STR_LEN)
 }
 
 impl Encode for str {
@@ -26,14 +28,13 @@ impl Encode for str {
     #[inline(always)]
     unsafe fn encode(&self, buffer: *mut u8, offset: &mut usize) {
         let len = bounded_len(self);
+        let start = *offset;
+        // SAFETY: the caller reserves the complete prefix and UTF-8 byte range.
         unsafe {
-            // The prefix and copied content describe exactly the same byte range.
-            buffer.add(*offset).cast::<u32>().write_unaligned(len as u32);
-            *offset += 4;
-            // Write content bytes
-            core::ptr::copy_nonoverlapping(self.as_ptr(), buffer.add(*offset), len);
+            buffer.add(start).cast::<u32>().write_unaligned(len as u32);
+            core::ptr::copy_nonoverlapping(self.as_ptr(), buffer.add(start + 4), len);
         }
-        *offset += len;
+        *offset = start + 4 + len;
     }
 
     #[inline]
