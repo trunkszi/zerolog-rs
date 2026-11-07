@@ -1,0 +1,31 @@
+[package]
+name = "zerolog-core"
+version.workspace = true
+edition.workspace = true
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "Core runtime for zerolog-rs: lock-free SPSC queues, background poller, and binary encoding"
+license.workspace = true
+repository = "https://github.com/trunkszi/zerolog-rs"
+
+[features]
+default = ["buffer-2m"]
+buffer-1m  = []
+buffer-2m  = []
+buffer-4m  = []
+buffer-8m  = []
+buffer-16m = []
+buffer-32m = []
+buffer-64m = []
+
+[dependencies]
+ryu = { workspace = true }
+libc = { workspace = true }
+
+uarch = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+bench = false
+
+[lints]
+workspace = true

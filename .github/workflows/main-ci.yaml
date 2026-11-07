@@ -1,0 +1,117 @@
+name: Main CI
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: main-ci
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        run: |
+          cargo fmt --all
+          git diff --exit-code || (echo "::error::Code is not formatted. Run 'cargo fmt --all' locally." && exit 1)
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --all-targets
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Build examples
+        run: cargo build --examples
+
+      - name: Compile benchmarks
+        run: cargo bench --no-run
+
+  test-buffer-sizes:
+    name: test (buffer sizes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: test
+
+    strategy:
+      matrix:
+        feature: [buffer-1m, buffer-4m, buffer-8m]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.feature }}-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ matrix.feature }}-
+
+      - name: Test with ${{ matrix.feature }}
+        run: cargo test --no-default-features --features ${{ matrix.feature }}
+
+  bench:
+    name: benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (from rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-
+
+      - name: Run latency benchmarks
+        run: cargo bench --bench latency_throughput -- 'latency/'
+
+      - name: Run throughput benchmarks
+        run: cargo bench --bench latency_throughput -- 'throughput'
+
+      - name: Run core component benchmarks
+        run: cargo bench --bench core_component_bench

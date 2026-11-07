@@ -1,0 +1,101 @@
+[package]
+name = "zerolog-rs"
+version.workspace = true
+edition.workspace = true
+authors = ["Nathan Shea <itzrustz@gmail.com>"]
+description = "High-performance lock-free structured logging with sub-30ns hot-path latency"
+license.workspace = true
+repository = "https://github.com/trunkszi/zerolog-rs"
+readme = "README.md"
+keywords = ["logging", "lock-free", "low-latency", "structured-logging"]
+categories = ["development-tools::debugging"]
+
+[lib]
+bench = false
+name = "zerolog"
+path = "src/lib.rs"
+
+[features]
+default = ["buffer-2m"]
+buffer-1m  = ["zerolog-core/buffer-1m"]
+buffer-2m  = ["zerolog-core/buffer-2m"]
+buffer-4m  = ["zerolog-core/buffer-4m"]
+buffer-8m  = ["zerolog-core/buffer-8m"]
+buffer-16m = ["zerolog-core/buffer-16m"]
+buffer-32m = ["zerolog-core/buffer-32m"]
+buffer-64m = ["zerolog-core/buffer-64m"]
+
+[dependencies]
+zerolog-core = { workspace = true }
+zerolog-macros = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zerolog-uring = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+liburing = { workspace = true }
+libc = { workspace = true }
+
+[[bench]]
+name = "zerolog_bench"
+harness = false
+
+[[bench]]
+name = "latency_throughput"
+harness = false
+
+[[bench]]
+name = "core_component_bench"
+harness = false
+
+[[bench]]
+name = "poller_header_bench"
+harness = false
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+lto = "fat"
+codegen-units = 1
+
+[workspace]
+resolver = "3"
+members = ["core", "macros", "crates/*"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+uarch = { git = "https://github.com/trunkszi/uarch-rs.git", branch = "main", default-features = false }
+liburing = { git = "https://github.com/trunkszi/liburing-rs.git", branch = "main", default-features = false }
+thiserror = { version = "2", default-features = false }
+libc = { version = "0.2", default-features = false }
+ryu = { version = "1.0", default-features = false }
+syn = { version = "2", default-features = false, features = ["full", "parsing", "proc-macro", "printing", "clone-impls", "derive"] }
+quote = { version = "1", default-features = false }
+proc-macro2 = { version = "1", default-features = false, features = ["proc-macro"] }
+zerolog-core = { path = "core", version = "=0.2.0", default-features = false }
+zerolog-macros = { path = "macros", version = "=0.2.0", default-features = false }
+zerolog-uring = { path = "crates/uring", version = "=0.2.0", default-features = false }
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+
+[lints]
+workspace = true
